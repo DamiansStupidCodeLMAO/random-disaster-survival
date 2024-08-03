@@ -1,0 +1,12 @@
+steps:
+- uses: actions/checkout@v3
+# Build the applications
+- uses: nhartland/love-build@master
+  with:
+   app_name: 'random_disaster_survival'
+   love_version: '11.5'
+# Upload the built applications
+- uses: actions/upload-artifact@v1
+  with:
+    name: built-applications
+    path: 'release'
