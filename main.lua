@@ -60,7 +60,7 @@ function love.load(args)
 	paused = false
 	pausemenu_highlight = 0
 	dead, botdead = 0, 0
-	love.filesystem.setIdentity("randomdisastersurvival", true)
+	love.filesystem.setIdentity("random_disaster_survival", true)
 	if love.filesystem.getInfo("savedata") == nil or tableContains(args, "reset_save_data_like_really_i_want_to_this_text_is_this_long_to_guarantee_i_intended_this") then
 		file = love.filesystem.newFile("savedata", "w")
 		file:write("0\n0\n0\n1\n1\n1\n6\ntrue\n0\n0")
