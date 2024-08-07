@@ -343,10 +343,10 @@ if disaster == 0 then
 		if disaster_Stored == 0 then
 			love.audio.play(warnaudio)
 			debug_disaster_number = debug_disaster_number + 1
-			disaster_Stored = 9 --love.math.random(1, 8)
-			--while disaster_Stored == previous_disaster do
-			--	disaster_Stored = love.math.random(1, 8)
-		    --end
+			disaster_Stored = love.math.random(1, 8)
+			while disaster_Stored == previous_disaster do
+				disaster_Stored = love.math.random(1, 8)
+		    end
 			if love.math.random(1, 10) == 10 then
 				modifier = love.math.random(1,5)
 				while disaster_Stored == 4 and modifier == 4 do
