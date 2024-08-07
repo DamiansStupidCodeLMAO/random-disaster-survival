@@ -27,6 +27,7 @@ function love.load(args)
 	blackhole = love.graphics.newImage("image_assets/disaster_assets/black_hole_that_strangely_is_actually_orange_not_black.png")
 	lightning = love.graphics.newImage("image_assets/disaster_assets/lightning.png")
 	stormclouds = love.graphics.newImage("image_assets/disaster_assets/clouds.png")
+	zombie = love.graphics.newImage("image_assets/disaster_assets/zombie.png")
 	char = love.graphics.newImage("image_assets/chars/char_main.png")
 	botchar = love.graphics.newImage("image_assets/chars/char_bot.png")
 	warn = love.graphics.newImage("image_assets/ui_assets/warn.png")
@@ -40,8 +41,8 @@ function love.load(args)
 	yesno_select = {"*", "v"}
 	time_speeds_string = {"1/2", "1", "2", "3", "5", "10", "20", "30", "PAUSED"} 
 	time_speeds_number = {0.5, 1, 2, 3, 5, 10, 20, 30, 1/0} --honestly idk if 1/0 for infinity is the *best* method here, but if it works it works on god
-	warnquads = {love.graphics.newQuad(0, 0, 192, 32, 192, 256), love.graphics.newQuad(0, 32, 192, 32, 192, 256), love.graphics.newQuad(0, 64, 192, 32, 192, 256), love.graphics.newQuad(0, 96, 192, 32, 192, 256), love.graphics.newQuad(0, 128, 192, 32, 192, 256), love.graphics.newQuad(0, 160, 192, 32, 192, 256), love.graphics.newQuad(0, 192, 192, 32, 192, 256), love.graphics.newQuad(0, 224, 192, 32, 192, 256)}
-	modifiers = {"MINI PLAYERS", "LOW GRAVITY", "HIGH GRAVITY", "MISSING PLATFORM"}
+	warnquads = {love.graphics.newQuad(0, 0, 192, 32, 192, 256), love.graphics.newQuad(0, 32, 192, 32, 192, 256), love.graphics.newQuad(0, 64, 192, 32, 192, 256), love.graphics.newQuad(0, 96, 192, 32, 192, 256), love.graphics.newQuad(0, 128, 192, 32, 192, 256), love.graphics.newQuad(0, 160, 192, 32, 192, 256), love.graphics.newQuad(0, 192, 192, 32, 192, 256), love.graphics.newQuad(0, 224, 192, 32, 192, 256), love.graphics.newQuad(0, 224, 192, 32, 192, 256)}
+	modifiers = {"MINI PLAYERS", "LOW GRAVITY", "HIGH GRAVITY", "MISSING PLATFORM", "GIANT PLAYERS"}
 	jumpaudio = love.audio.newSource("audio_assets/why_does_this_kinda_sound_like_super_mario_world_jump.wav", "static")
 	jump_sound_check = 0
 	explodeaudio = love.audio.newSource("audio_assets/boom.wav", "static")
@@ -56,6 +57,7 @@ function love.load(args)
 	floatplatwidth, floatplatheight, floatplatx, floatplaty, floatplatdir, floatplatpause, enableFloatPlat = 32, 9, 80, 64, 1, 0, true
 	playwidth, playheight, playx, playy, playspeed, playvel, grav, playjump, playdir = 10, 21, (platwidth / 2)-5, 0, 100, 0, 100, 50, "left"
 	botwidth, botheight, botx, boty, botspeed, botvel, botjump, botdir, botact, bottime = 10, 21, (platwidth / 2)-5, 0, 100, 0, 50, "left", 0, 3
+	zombwidth, zombheight, zombx, zomby, zombspeed, zombvel, zombjump, zombdir, zombact, zombtime = 10, 21, (platwidth / 2)-5, 0, 75, 0, 50, "left", 0, 3
 	lavawidth, lavaheight, lavax, lavay = 0, 0, -999, -999
 	boomwidth, boomheight, boomx, boomy, boomactive, boomcount = 0, 0, -999, -999, false, 0
 	beamwidth, beamheight, beamx, beamy = 0, 0, -999, -999
@@ -118,7 +120,7 @@ function love.load(args)
 	lasersx, lasersy, lasersw, lasersh = {-999,-999}, {-999,-999}, 0, 0 --16, 8
 	hardcoredead = false
 	death_messages_1 = {"SKILL ISSUE", "GG EZ", "R.I.P.", "CANT BELIEVE THAT KILLED", "WOMP WOMP", "EVER HEARD OF LIVING?", "NO WAY YOU DIED TO", "TRY DODGING NEXT TIME"}
-	disastNamesThatWillOnlyBeUsedInTheDeathMessage = {"LAVA", "AN EXPLOSION", "A LASERBEAM", "ACID", "A METEOR", "A BLACK HOLE", "LASERS", "LIGHTNING"}
+	disastNamesThatWillOnlyBeUsedInTheDeathMessage = {"LAVA", "AN EXPLOSION", "A LASERBEAM", "ACID", "A METEOR", "A BLACK HOLE", "LASERS", "LIGHTNING", "A ZOMBIE"}
 	death_messages_2 = {"", "", "", "YOU", "",  "TRY IT NEXT TIME.", disastNamesThatWillOnlyBeUsedInTheDeathMessage[disaster], ""}
 	modifier = 0
 	lightningx, lightningy = -999, -999
@@ -274,12 +276,11 @@ function stopDisaster()
 	elseif disaster == 7 then
 		lasersx, lasersy, lasersw, lasersh = {-999,-999,-999}, {-999,-999,-999}, 0, 0 
 	end
-	if modifier == 1 then --modifier un-modifying tasks
+	if modifier == 1 or modifier == 5 then --modifier un-modifying tasks
 		playwidth, playheight = 10, 21
 		botwidth, botheight = 10, 21
-	elseif modifier == 2 then
-		grav = 100
-	elseif modifier == 3 then
+		zombwidth, zombheight = 10, 21
+	elseif modifier == 2 or modifier == 3 then
 		grav = 100
 	elseif modifier == 4 then
 		enableFloatPlat = true
@@ -342,14 +343,14 @@ if disaster == 0 then
 		if disaster_Stored == 0 then
 			love.audio.play(warnaudio)
 			debug_disaster_number = debug_disaster_number + 1
-			disaster_Stored = love.math.random(1, 8)
-			while disaster_Stored == previous_disaster do
-				disaster_Stored = love.math.random(1, 8)
-		    end
+			disaster_Stored = 9 --love.math.random(1, 8)
+			--while disaster_Stored == previous_disaster do
+			--	disaster_Stored = love.math.random(1, 8)
+		    --end
 			if love.math.random(1, 10) == 10 then
-				modifier = love.math.random(1,4)
-				if disaster_Stored == 4 and modifier == 4 then
-					love.math.random(1,3)
+				modifier = love.math.random(1,5)
+				while disaster_Stored == 4 and modifier == 4 do
+					love.math.random(1,5)
 				end
 			end
 		end
@@ -361,12 +362,17 @@ if disaster == 0 then
 			if modifier == 1 then
 				playwidth, playheight = 7.5, 15.75
 				botwidth, botheight = 7.5, 15.75
+				zombwidth, zombheight = 7.5, 15.75
 			elseif modifier == 2 then
 				grav = 25
 			elseif modifier == 3 then
 				grav = 175
 			elseif modifier == 4 then
 				enableFloatPlat = false
+			elseif modifier == 5 then
+				playwidth, playheight = 12.5, 26.25
+				botwidth, botheight = 12.5, 26.25
+				zombwidth, zombheight = 12.5, 26.25
 			end
 			-- disaster initialization tasks (e.g. making/setting variables) go here
 			if disaster == 1 then
@@ -391,6 +397,8 @@ if disaster == 0 then
 				lightningActive = false
 				lightningx = -999
 				lightCount = 0
+			elseif disaster == 9 then
+				zombx, zomby, zombdir, zombact, zombtime = (platwidth / 2)-5, 0, "left", 0, 3
 			end
 		end
 		
@@ -504,6 +512,59 @@ else
 				stopDisaster()
 			end
 		end
+	elseif disaster == 9 then
+		if CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, zombx, zomby, zombwidth, zombheight)  or CheckCollision(platx, platy, platwidth, platheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(rightplatx, rightplaty, rightplatwidth, rightplatheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(leftplatx, leftplaty, leftplatwidth, leftplatheight, zombx, zomby, zombwidth, zombheight) then
+			zombvel = 0
+			if CheckCollision(platx, platy, platwidth, platheight, zombx, zomby, zombwidth, zombheight) then
+				zomby = platy - zombheight
+			end
+			if CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, zombx, zomby, zombwidth, zombheight) and floatplatpause <=0 then
+				zombx = zombx + (50*floatplatdir)*dt
+			end
+		else
+			zombvel = zombvel + grav * dt
+			zomby = zomby + zombvel * dt
+			if jump_sound_check == 1 then
+				jump_sound_check = 0
+			end
+		end
+		if zombtime <= 0 then
+			if zombact ~= 0 then
+				zombact = 0
+				zombtime = love.math.random(1.0, 2.0)
+			else
+				zombact = love.math.random(1, 3)
+				zombtime = love.math.random(0.5, 2.0)
+			end
+		else
+		if zombact == 0 then
+			zombtime = zombtime - dt
+		elseif zombact == 1 then
+			zombtime = zombtime - dt
+			zombx = zombx - (zombspeed * dt)    -- The zomb moves to the left.
+			zombdir = "left"
+			if zombx < -1 then 
+				zombact = 2
+			end
+		elseif zombact == 2 then
+			zombtime = zombtime - dt
+			zombx = zombx + (zombspeed * dt)
+			zombdir = "right"
+			if zombx+(9*(zombwidth/10)) > 192 then
+				zombact = 1
+			end
+		elseif zombact == 3 then
+			if CheckCollision(platx, platy, platwidth, platheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(rightplatx, rightplaty, rightplatwidth, rightplatheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(leftplatx, leftplaty, leftplatwidth, leftplatheight, zombx, zomby, zombwidth, zombheight) then
+				zombvel = zombjump*-1
+				zomby = zomby + zombvel * dt
+				if jump_sound_check == 0 then
+					success = love.audio.play(jumpaudio)
+					jump_sound_check = 1
+				end
+			end
+			zombact = 0
+		end
+	end
 	end
 end
 	-- This is how to assign keyboard inputs.
@@ -545,7 +606,7 @@ else
 		jump_sound_check = 0
 	end
 end -- 
-if playy >= 144 or ((CheckCollision(lightningx, lightningy-144, 24, 144, playx, playy, playwidth, playheight) and lightningActive) or  CheckCollision(lasersx[2]+2, lasersy[2]+2, lasersw-4, lasersh-4, playx, playy, playwidth, playheight) or CheckCollision(lasersx[1]+2, lasersy[1]+2, lasersw-4, lasersh-4, playx, playy, playwidth, playheight) or (CheckCollision(96-((16*disasTimer)/2), 72-((16*disasTimer)/2), disasTimer*16, disasTimer*16, playx, playy, playwidth, playheight) and disaster==6) or (CheckCollision(boomx, boomy, boomwidth, boomheight, playx, playy, playwidth, playheight) and boomactive) or CheckCollision(meteorx, meteory, meteorwidth, meteorheight, playx, playy, playwidth, playheight) or CheckCollision(lavax, lavay, lavawidth, lavaheight, playx, playy, playwidth, playheight) or CheckCollision(beamx, beamy, beamwidth, beamheight, playx, playy, playwidth, playheight) ) and dead~=1 then 
+if playy >= 144 or ( (CheckCollision(zombx, zomby, zombwidth, zombheight, playx, playy, playwidth, playheight) and disaster==9) or (CheckCollision(lightningx, lightningy-144, 24, 144, playx, playy, playwidth, playheight) and lightningActive) or  CheckCollision(lasersx[2]+2, lasersy[2]+2, lasersw-4, lasersh-4, playx, playy, playwidth, playheight) or CheckCollision(lasersx[1]+2, lasersy[1]+2, lasersw-4, lasersh-4, playx, playy, playwidth, playheight) or (CheckCollision(96-((16*disasTimer)/2), 72-((16*disasTimer)/2), disasTimer*16, disasTimer*16, playx, playy, playwidth, playheight) and disaster==6) or (CheckCollision(boomx, boomy, boomwidth, boomheight, playx, playy, playwidth, playheight) and boomactive) or CheckCollision(meteorx, meteory, meteorwidth, meteorheight, playx, playy, playwidth, playheight) or CheckCollision(lavax, lavay, lavawidth, lavaheight, playx, playy, playwidth, playheight) or CheckCollision(beamx, beamy, beamwidth, beamheight, playx, playy, playwidth, playheight) ) and dead~=1 then 
 	if hardcore == "true" then
 		death_message = love.math.random(1, #death_messages_1)
 		death_messages_2[7] = disastNamesThatWillOnlyBeUsedInTheDeathMessage[disaster]
@@ -581,7 +642,7 @@ else
 		jump_sound_check = 0
 	end
 end
-if boty >= 144 or ((CheckCollision(lightningx, lightningy-144, 24, 144, botx, boty, botwidth, botheight) and lightningActive) or CheckCollision(lasersx[2]+2, lasersy[2]+2, lasersw-4, lasersh-4, botx, boty, botwidth, botheight) or CheckCollision(lasersx[1]+2, lasersy[1]+2, lasersw-4, lasersh-4, botx, boty, botwidth, botheight) or (CheckCollision(boomx, boomy, boomwidth, boomheight, botx, boty, botwidth, botheight) and boomactive) or CheckCollision(meteorx, meteory, meteorwidth, meteorheight, botx, boty, botwidth, botheight) or CheckCollision(lavax, lavay, lavawidth, lavaheight, botx, boty, botwidth, botheight) or CheckCollision(beamx, beamy, beamwidth, beamheight, botx, boty, botwidth, botheight) ) and botdead~=1 then 
+if boty >= 144 or ((CheckCollision(zombx, zomby, zombwidth, zombheight, botx, boty, botwidth, botheight) and disaster==9) or (CheckCollision(lightningx, lightningy-144, 24, 144, botx, boty, botwidth, botheight) and lightningActive) or CheckCollision(lasersx[2]+2, lasersy[2]+2, lasersw-4, lasersh-4, botx, boty, botwidth, botheight) or CheckCollision(lasersx[1]+2, lasersy[1]+2, lasersw-4, lasersh-4, botx, boty, botwidth, botheight) or (CheckCollision(boomx, boomy, boomwidth, boomheight, botx, boty, botwidth, botheight) and boomactive) or CheckCollision(meteorx, meteory, meteorwidth, meteorheight, botx, boty, botwidth, botheight) or CheckCollision(lavax, lavay, lavawidth, lavaheight, botx, boty, botwidth, botheight) or CheckCollision(beamx, beamy, beamwidth, beamheight, botx, boty, botwidth, botheight) ) and botdead~=1 then 
 	love.audio.play(deathaudio)
     botdead, botx, boty = 1, (platwidth / 2)-8, 0
 end
@@ -670,6 +731,8 @@ function love.draw()
 		love.graphics.setColor(1,1,1)
 		if boomactive == false then
 			love.graphics.draw(boomwarn, boomx, boomy)
+		elseif modifier == 3 then
+			grav = 100
 		else
 			love.graphics.draw(kaboom, boomx, boomy)
 		end
@@ -704,6 +767,13 @@ function love.draw()
 			love.graphics.draw(boomwarn, lightningx-4, lightningy-32, 0, 1)
 		end
 		love.graphics.draw(stormclouds, 0, 0)
+	end
+	if disaster == 9 then
+		if zombdir == "right" then
+			love.graphics.draw(zombie, zombx-(3*(zombwidth/10)), zomby, 0, zombwidth/10)
+		else
+			love.graphics.draw(zombie, zombx+(13*(zombwidth/10)), zomby, 0, zombwidth/-10, zombwidth/10)
+		end
 	end
 	love.graphics.setColor(255, 255, 255)
 	if disaster_Stored ~= 0 then
