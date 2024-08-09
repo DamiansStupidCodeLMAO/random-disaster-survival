@@ -180,14 +180,14 @@ function love.keypressed(key, sc, isrepeat)
 	if paused then
 		if key=="down" and isrepeat ~= 'true' then
 			pausemenu_highlight = pausemenu_highlight + 1
-			if pausemenu_highlight > 6 then 
+			if pausemenu_highlight > 7 then 
 				pausemenu_highlight = 0
 			end
 		end
 		if key=="up" and isrepeat ~= 'true' then
 			pausemenu_highlight = pausemenu_highlight - 1
 			if pausemenu_highlight < 0 then 
-				pausemenu_highlight = 6
+				pausemenu_highlight = 7
 			end
 		end
 		if (key=="left" or key=="a") and isrepeat~= 'true' then
@@ -414,6 +414,7 @@ if disaster == 0 then
 				lightningx = -999
 				lightCount = 0
 			elseif disaster == 9 then
+				disasTimer = 0
 				zombx, zomby, zombdir, zombact, zombtime = (platwidth / 2)-5, 0, "left", 0, 3
 			end
 		end
@@ -529,6 +530,10 @@ else
 			end
 		end
 	elseif disaster == 9 then
+		disasTimer = disasTimer + dt
+		if disasTimer >= 10 then
+			stopDisaster()
+		end
 		if (CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, zombx, zomby, zombwidth, zombheight) and enableFloatPlat)  or CheckCollision(platx, platy, platwidth, platheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(rightplatx, rightplaty, rightplatwidth, rightplatheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(leftplatx, leftplaty, leftplatwidth, leftplatheight, zombx, zomby, zombwidth, zombheight) then
 			zombvel = 0
 			if CheckCollision(platx, platy, platwidth, platheight, zombx, zomby, zombwidth, zombheight) then
@@ -658,7 +663,7 @@ else
 		jump_sound_check = 0
 	end
 end
-if boty >= 144 or ((CheckCollision(zombx, zomby, zombwidth, zombheight, botx, boty, botwidth, botheight) and disaster==9) or (CheckCollision(lightningx, lightningy-144, 24, 144, botx, boty, botwidth, botheight) and lightningActive) or CheckCollision(lasersx[2]+2, lasersy[2]+2, lasersw-4, lasersh-4, botx, boty, botwidth, botheight) or CheckCollision(lasersx[1]+2, lasersy[1]+2, lasersw-4, lasersh-4, botx, boty, botwidth, botheight) or (CheckCollision(boomx, boomy, boomwidth, boomheight, botx, boty, botwidth, botheight) and boomactive) or CheckCollision(meteorx, meteory, meteorwidth, meteorheight, botx, boty, botwidth, botheight) or CheckCollision(lavax, lavay, lavawidth, lavaheight, botx, boty, botwidth, botheight) or CheckCollision(beamx, beamy, beamwidth, beamheight, botx, boty, botwidth, botheight) ) and botdead~=1 then 
+if boty >= 144 or ((CheckCollision(zombx, zomby, zombwidth, zombheight, botx, boty, botwidth, botheight) and disaster==9) or (CheckCollision(lightningx, lightningy-144, 24, 144, botx, boty, botwidth, botheight) and lightningActive) or CheckCollision(lasersx[2]+2, lasersy[2]+2, lasersw-4, lasersh-4, botx, boty, botwidth, botheight) or CheckCollision(lasersx[1]+2, lasersy[1]+2, lasersw-4, lasersh-4, botx, boty, botwidth, botheight) or (CheckCollision(96-((16*disasTimer)/2), 72-((16*disasTimer)/2), disasTimer*16, disasTimer*16, botx, boty, botwidth, botheight) and disaster==6) or (CheckCollision(boomx, boomy, boomwidth, boomheight, botx, boty, botwidth, botheight) and boomactive) or CheckCollision(meteorx, meteory, meteorwidth, meteorheight, botx, boty, botwidth, botheight) or CheckCollision(lavax, lavay, lavawidth, lavaheight, botx, boty, botwidth, botheight) or CheckCollision(beamx, beamy, beamwidth, beamheight, botx, boty, botwidth, botheight) ) and botdead~=1 then 
 	love.audio.play(deathaudio)
     botdead, botx, boty = 1, (platwidth / 2)-8, 0
 end
