@@ -41,7 +41,7 @@ function love.load(args)
 	yesno_select = {"*", "v"}
 	time_speeds_string = {"1/2", "1", "2", "3", "5", "10", "20", "30", "PAUSED"} 
 	time_speeds_number = {0.5, 1, 2, 3, 5, 10, 20, 30, 1/0} --honestly idk if 1/0 for infinity is the *best* method here, but if it works it works on god
-	warnquads = {love.graphics.newQuad(0, 0, 192, 32, 192, 256), love.graphics.newQuad(0, 32, 192, 32, 192, 256), love.graphics.newQuad(0, 64, 192, 32, 192, 256), love.graphics.newQuad(0, 96, 192, 32, 192, 256), love.graphics.newQuad(0, 128, 192, 32, 192, 256), love.graphics.newQuad(0, 160, 192, 32, 192, 256), love.graphics.newQuad(0, 192, 192, 32, 192, 256), love.graphics.newQuad(0, 224, 192, 32, 192, 256), love.graphics.newQuad(0, 224, 192, 32, 192, 256)}
+	warnquads = {love.graphics.newQuad(0, 0, 192, 32, 192, 288), love.graphics.newQuad(0, 32, 192, 32, 192, 288), love.graphics.newQuad(0, 64, 192, 32, 192, 288), love.graphics.newQuad(0, 96, 192, 32, 192, 288), love.graphics.newQuad(0, 128, 192, 32, 192, 288), love.graphics.newQuad(0, 160, 192, 32, 192, 288), love.graphics.newQuad(0, 192, 192, 32, 192, 288), love.graphics.newQuad(0, 224, 192, 32, 192, 288), love.graphics.newQuad(0, 256, 192, 32, 192, 288)}
 	modifiers = {"MINI PLAYERS", "LOW GRAVITY", "HIGH GRAVITY", "MISSING PLATFORM", "GIANT PLAYERS"}
 	jumpaudio = love.audio.newSource("audio_assets/why_does_this_kinda_sound_like_super_mario_world_jump.wav", "static")
 	jump_sound_check = 0
@@ -69,7 +69,7 @@ function love.load(args)
 	love.filesystem.setIdentity("random_disaster_survival", true)
 	if love.filesystem.getInfo("savedata") == nil or tableContains(args, "reset_save_data_like_really_i_want_to_this_text_is_this_long_to_guarantee_i_intended_this") then
 		file = love.filesystem.newFile("savedata", "w")
-		file:write("0\n0\n0\n1\n1\n1\n6\ntrue\n0\n0")
+		file:write("0\n0\n0\n1\n1\n1\n6\nfalse\n0\n0\n5")
 		file:close()
 	end
 	savetable = {}
@@ -103,6 +103,12 @@ function love.load(args)
 	print(savetable[9])
 	hardcorehighscore = tonumber(savetable[10])
 	print(savetable[10])
+	disastDelay = tonumber(savetable[11])
+	print(savetable[11])
+	guh = love.math.random(0,100)
+	if guh == 20 then 
+		char = love.graphics.newImage("image_assets/chars/char_main_2.png") 
+	end
 	love.window.setMode(1280, 720, {resizable=true})
 	love.window.setFullscreen(truefalse_table[fullscreen])
 	push.setupScreen(192, 144, {upscale = scaling_methods[scaling_method]})
@@ -148,7 +154,7 @@ function tableContains(table, content)
 end
 
 function love.quit()
-	success, err = love.filesystem.write("savedata", wins.."\n"..deaths.."\n"..coins.."\n"..fullscreen.."\n"..scaling_method.."\n"..bot_toggle.."\n"..time_speed.."\n"..hardcore.."\n"..hardcorewins.."\n"..hardcorehighscore)
+	success, err = love.filesystem.write("savedata", wins.."\n"..deaths.."\n"..coins.."\n"..fullscreen.."\n"..scaling_method.."\n"..bot_toggle.."\n"..time_speed.."\n"..hardcore.."\n"..hardcorewins.."\n"..hardcorehighscore.."\n"..disastDelay)
 	return not success
 end
 
@@ -216,6 +222,11 @@ function love.keypressed(key, sc, isrepeat)
 				else
 					hardcore = "true"
 				end
+			elseif pausemenu_highlight == 5 then
+				disastDelay = disastDelay - 1
+				if disastDelay < 2 then 
+					disastDelay = 10
+				end
 			end
 		end
 		if (key=="right" or key=="d" or key=="return" or key=="space" or key=="z") and isrepeat~= 'true' then
@@ -250,12 +261,17 @@ function love.keypressed(key, sc, isrepeat)
 				else
 					hardcore = "true"
 				end
+			elseif pausemenu_highlight == 5 then
+				disastDelay = disastDelay + 1
+				if disastDelay > 10 then 
+					disastDelay = 2
+				end
 			end
 		end
 		if (key=="return" or key=="z" or key=="space") and isrepeat~= 'true' then
-			if pausemenu_highlight==6 then
+			if pausemenu_highlight==7 then
 				love.event.quit(0)
-			elseif pausemenu_highlight==5 then
+			elseif pausemenu_highlight==6 then
 				paused = false
 			end
 		end
@@ -339,13 +355,13 @@ if not hardcoredead and not paused then
 	end
 if disaster == 0 then
 	disasTimer = disasTimer + dt
-	if disasTimer >= 3 then
+	if disasTimer >= disastDelay-2 then
 		if disaster_Stored == 0 then
 			love.audio.play(warnaudio)
 			debug_disaster_number = debug_disaster_number + 1
-			disaster_Stored = love.math.random(1, 8)
+			disaster_Stored = love.math.random(1, 9)
 			while disaster_Stored == previous_disaster do
-				disaster_Stored = love.math.random(1, 8)
+				disaster_Stored = love.math.random(1, 9)
 		    end
 			if love.math.random(1, 10) == 10 then
 				modifier = love.math.random(1,5)
@@ -354,7 +370,7 @@ if disaster == 0 then
 				end
 			end
 		end
-		if disasTimer >= 5 then
+		if disasTimer >= disastDelay then
 			disaster = disaster_Stored
 			disaster_Stored = 0
 			disasTimer = 0
@@ -513,12 +529,12 @@ else
 			end
 		end
 	elseif disaster == 9 then
-		if CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, zombx, zomby, zombwidth, zombheight)  or CheckCollision(platx, platy, platwidth, platheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(rightplatx, rightplaty, rightplatwidth, rightplatheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(leftplatx, leftplaty, leftplatwidth, leftplatheight, zombx, zomby, zombwidth, zombheight) then
+		if (CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, zombx, zomby, zombwidth, zombheight) and enableFloatPlat)  or CheckCollision(platx, platy, platwidth, platheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(rightplatx, rightplaty, rightplatwidth, rightplatheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(leftplatx, leftplaty, leftplatwidth, leftplatheight, zombx, zomby, zombwidth, zombheight) then
 			zombvel = 0
 			if CheckCollision(platx, platy, platwidth, platheight, zombx, zomby, zombwidth, zombheight) then
 				zomby = platy - zombheight
 			end
-			if CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, zombx, zomby, zombwidth, zombheight) and floatplatpause <=0 then
+			if (CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, zombx, zomby, zombwidth, zombheight) and enableFloatPlat) and floatplatpause <=0 then
 				zombx = zombx + (50*floatplatdir)*dt
 			end
 		else
@@ -554,7 +570,7 @@ else
 				zombact = 1
 			end
 		elseif zombact == 3 then
-			if CheckCollision(platx, platy, platwidth, platheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(rightplatx, rightplaty, rightplatwidth, rightplatheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(leftplatx, leftplaty, leftplatwidth, leftplatheight, zombx, zomby, zombwidth, zombheight) then
+			if (CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, zombx, zomby, zombwidth, zombheight) and enableFloatPlat) or CheckCollision(platx, platy, platwidth, platheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(rightplatx, rightplaty, rightplatwidth, rightplatheight, zombx, zomby, zombwidth, zombheight) or CheckCollision(leftplatx, leftplaty, leftplatwidth, leftplatheight, zombx, zomby, zombwidth, zombheight) then
 				zombvel = zombjump*-1
 				zomby = zomby + zombvel * dt
 				if jump_sound_check == 0 then
@@ -627,7 +643,7 @@ if playy >= 144 or ( (CheckCollision(zombx, zomby, zombwidth, zombheight, playx,
    		dead, playx, playy = 1, (platwidth / 2)-8, 0
 	end
 end
-if CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, botx, boty, botwidth, botheight)  or CheckCollision(platx, platy, platwidth, platheight, botx, boty, botwidth, botheight) or CheckCollision(rightplatx, rightplaty, rightplatwidth, rightplatheight, botx, boty, botwidth, botheight) or CheckCollision(leftplatx, leftplaty, leftplatwidth, leftplatheight, botx, boty, botwidth, botheight) then
+if (CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, botx, boty, botwidth, botheight) and enableFloatPlat)  or CheckCollision(platx, platy, platwidth, platheight, botx, boty, botwidth, botheight) or CheckCollision(rightplatx, rightplaty, rightplatwidth, rightplatheight, botx, boty, botwidth, botheight) or CheckCollision(leftplatx, leftplaty, leftplatwidth, leftplatheight, botx, boty, botwidth, botheight) then
 	botvel = 0
 	if CheckCollision(platx, platy, platwidth, platheight, botx, boty, botwidth, botheight) then
 		boty = platy - botheight
@@ -672,7 +688,7 @@ elseif botact == 2 then
 		botact = 1
 	end
 elseif botact == 3 then
-	if CheckCollision(platx, platy, platwidth, platheight, botx, boty, botwidth, botheight) or CheckCollision(rightplatx, rightplaty, rightplatwidth, rightplatheight, botx, boty, botwidth, botheight) or CheckCollision(leftplatx, leftplaty, leftplatwidth, leftplatheight, botx, boty, botwidth, botheight) then
+	if (CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, botx, boty, botwidth, botheight) and enableFloatPlat)  or CheckCollision(platx, platy, platwidth, platheight, botx, boty, botwidth, botheight) or CheckCollision(rightplatx, rightplaty, rightplatwidth, rightplatheight, botx, boty, botwidth, botheight) or CheckCollision(leftplatx, leftplaty, leftplatwidth, leftplatheight, botx, boty, botwidth, botheight) then
 		botvel = botjump*-1
 		boty = boty + botvel * dt
 		if jump_sound_check == 0 then
@@ -813,69 +829,76 @@ function love.draw()
 		love.graphics.setColor(1, 1, 1, 1)
 		love.graphics.print("PAUSED", 2, 2, 0, 2)
 		if pausemenu_highlight == 0 then
-			love.graphics.print(scaledesc_line1[scaling_method], 0, 114)
-			love.graphics.print(scaledesc_line2[scaling_method], 0, 120)
+			love.graphics.print(scaledesc_line1[scaling_method], 0, 118)
+			love.graphics.print(scaledesc_line2[scaling_method], 0, 124)
 			love.graphics.setColor(1, 1, 0, 1)
 		else
 			love.graphics.setColor(1, 1, 1, 1)
 		end
-		love.graphics.print("SCALING:"..scaling_select[scaling_method], 2, 20, 0, 2)
+		love.graphics.print("SCALING:"..scaling_select[scaling_method], 2, 16, 0, 2)
 		if pausemenu_highlight == 1 then
 			if forcefullscreen then
-				love.graphics.print("OPTION UNAVAILABLE", 0, 114)
-				love.graphics.print("(GAME STARTED WITH FULLSCREEN ARGUMENT)", 0, 120)
+				love.graphics.print("OPTION UNAVAILABLE", 0, 118)
+				love.graphics.print("(GAME STARTED WITH FULLSCREEN ARGUMENT)", 0, 124)
 				love.graphics.setColor(1, 1, 0, 0.5)
 			else
-				love.graphics.print("WHETHER OR NOT TO SHOW THE GAME IN FULLSCREEN", 0, 114)
+				love.graphics.print("WHETHER OR NOT TO SHOW THE GAME IN FULLSCREEN", 0, 118)
 				love.graphics.setColor(1, 1, 0, 1)
 			end
 		else
 			love.graphics.setColor(1, 1, 1, 1)
 		end
 		if forcefullscreen then
-			love.graphics.print("FULLSCREEN:x", 2, 32, 0, 2)
+			love.graphics.print("FULLSCREEN:x", 2, 28, 0, 2)
 		else
-			love.graphics.print("FULLSCREEN:"..yesno_select[fullscreen], 2, 32, 0, 2)
+			love.graphics.print("FULLSCREEN:"..yesno_select[fullscreen], 2, 28, 0, 2)
 		end
 		if pausemenu_highlight == 2 then
-			love.graphics.print("WHETHER OR NOT TO SHOW THE AI BOT (SILLY GUY)", 0, 114)
+			love.graphics.print("WHETHER OR NOT TO SHOW THE AI BOT (SILLY GUY)", 0, 118)
 			love.graphics.setColor(1, 1, 0, 1)
 		else
 			love.graphics.setColor(1, 1, 1, 1)
 		end
-		love.graphics.print("HIDE ROBOT:"..yesno_select[bot_toggle], 2, 44, 0, 2)
+		love.graphics.print("HIDE ROBOT:"..yesno_select[bot_toggle], 2, 40, 0, 2)
 		if pausemenu_highlight == 3 then
-			love.graphics.print("TIME, IN MINUTES, FOR EACH HALF OF THE DAY TO CYCLE", 0, 114)
-			love.graphics.print("(TOTALLY HALVED BECAUSE AM/PM. NOT UNINTENTIONAL)", 0, 120) --source: trust me bro
+			love.graphics.print("TIME, IN MINUTES, FOR EACH HALF OF THE DAY TO CYCLE", 0, 118)
+			love.graphics.print("(TOTALLY HALVED BECAUSE AM/PM. NOT UNINTENTIONAL)", 0, 124) --source: trust me bro
 			love.graphics.setColor(1, 1, 0, 1)
 		else
 			love.graphics.setColor(1, 1, 1, 1)
 		end
-		love.graphics.print("TIME SPEED:"..time_speeds_string[time_speed], 2, 56, 0, 2)
+		love.graphics.print("TIME SPEED:"..time_speeds_string[time_speed], 2, 52, 0, 2)
 		if pausemenu_highlight == 4 then
-			love.graphics.print("UPON DEATH, LOSE ALL WINS AND HALF OF COINS, BUT GET", 0, 114)
-			love.graphics.print("MORE COINS PER WIN (HARDCORE WINS ARE SAVED", 0, 120)
-			love.graphics.print("SEPARATELY FROM REGULAR WINS)", 0, 126)
+			love.graphics.print("UPON DEATH, LOSE ALL WINS AND HALF OF COINS, BUT GET", 0, 118)
+			love.graphics.print("MORE COINS PER WIN (HARDCORE WINS ARE SAVED", 0, 124)
+			love.graphics.print("SEPARATELY FROM REGULAR WINS)", 0, 130)
 			love.graphics.setColor(1, 1, 0, 1)
 		else
 			love.graphics.setColor(1, 1, 1, 1)
 		end
-		love.graphics.print("HARDCORE:"..string.upper(hardcore), 2, 68, 0, 2)
+		love.graphics.print("HARDCORE:"..string.upper(hardcore), 2, 64, 0, 2)
 		if pausemenu_highlight == 5 then
-			love.graphics.print("UNPAUSE AND RETURN TO THE GAME", 0, 114)
+			love.graphics.print("DELAY BETWEEN DISASTERS BEING ACTIVATED", 0, 118)
 			love.graphics.setColor(1, 1, 0, 1)
 		else
 			love.graphics.setColor(1, 1, 1, 1)
 		end
-		love.graphics.print("BACK TO GAME", 2, 80, 0, 2)
+		love.graphics.print("DISASTER DELAY: "..disastDelay, 2, 76, 0, 2)
 		if pausemenu_highlight == 6 then
-			love.graphics.print("SAVE YOUR COINS, WINS, AND DEATHS (TOP-RIGHT)", 0, 114)
-			love.graphics.print("THEN EXIT AND RETURN TO DESKTOP/OS", 0, 120)
+			love.graphics.print("UNPAUSE AND RETURN TO THE GAME", 0, 118)
 			love.graphics.setColor(1, 1, 0, 1)
 		else
 			love.graphics.setColor(1, 1, 1, 1)
 		end
-		love.graphics.print("SAVE + EXIT GAME", 2, 92, 0, 2)
+		love.graphics.print("BACK TO GAME", 2, 88, 0, 2)
+		if pausemenu_highlight == 7 then
+			love.graphics.print("SAVE YOUR COINS, WINS, AND DEATHS (TOP-RIGHT)", 0, 118)
+			love.graphics.print("THEN EXIT AND RETURN TO DESKTOP/OS", 0, 124)
+			love.graphics.setColor(1, 1, 0, 1)
+		else
+			love.graphics.setColor(1, 1, 1, 1)
+		end
+		love.graphics.print("SAVE + EXIT GAME", 2, 100, 0, 2)
 		love.graphics.printf("#x"..coins,1,1,191,"right",0,1)
 		if hardcore == "true" then
 			love.graphics.printf("\\x"..hardcorewins,1,8,191,"right",0,1)
