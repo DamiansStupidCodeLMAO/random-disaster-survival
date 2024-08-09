@@ -7,7 +7,8 @@
  Controls:
 |Key|Action|
 |---|------|
-|Arrows/WASD|Move, Navigate/Select in Menus|
-|Space, Z|Jump, Select in Menus|
+|Left/Right, A/D (Ingame)|Move|
+|Space, Z, Up/W (Ingame)|Jump|
 |Escape|Pause|
-|Enter|Select in Menus|
+|Up/Down, W/S (In menus)|Select|
+|Enter/Z/Space, Left/Right/A/D (In menus)|Change Setting|

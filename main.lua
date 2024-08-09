@@ -358,7 +358,6 @@ if disaster == 0 then
 	if disasTimer >= disastDelay-2 then
 		if disaster_Stored == 0 then
 			love.audio.play(warnaudio)
-			debug_disaster_number = debug_disaster_number + 1
 			disaster_Stored = love.math.random(1, 9)
 			while disaster_Stored == previous_disaster do
 				disaster_Stored = love.math.random(1, 9)
@@ -435,7 +434,7 @@ else
 		disasTimer = disasTimer + dt
 		if disasTimer >= 1 then
 			if boomwidth == 0 then
-			 	boomx, boomy, boomwidth, boomheight, boomactive = love.math.random(0, 160), love.math.random(0, 112), 32, 32, false
+			 	boomx, boomy, boomwidth, boomheight, boomactive = love.math.random(0, 160), love.math.random(32, 112), 32, 32, false
 			end
 			if disasTimer >= 2 then
 				boomactive = true
@@ -444,7 +443,7 @@ else
 					boomwidth, boomheight, boomx, boomy, boomactive = 0, 0, 0, 0, false
 					disasTimer = 0
 					boomcount = boomcount + 1
-					if boomcount >= 10 then
+					if boomcount >= 5 then
 						stopDisaster()
 					end
 				end
@@ -457,7 +456,7 @@ else
 		elseif beamx <= 20 then
 			beamdir = 1
 			beamloops = beamloops+1
-			if beamloops == 10 then
+			if beamloops == 5 then
 				stopDisaster()
 			end
 		end
@@ -611,7 +610,7 @@ if (CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, play
 	if CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, playx, playy, playwidth, playheight) and floatplatpause <=0 then
 		playx = playx + (50*floatplatdir)*dt
 	end
-	if love.keyboard.isDown('space', 'z') then
+	if love.keyboard.isDown('space', 'z', 'w', 'up') then
 		playvel = playjump*-1
 		playy = playy + playvel * dt
 		if jump_sound_check == 0 then
