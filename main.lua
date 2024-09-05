@@ -31,6 +31,7 @@ function love.load(args)
 	char = love.graphics.newImage("image_assets/chars/char_main.png")
 	botchar = love.graphics.newImage("image_assets/chars/char_bot.png")
 	warn = love.graphics.newImage("image_assets/ui_assets/warn.png")
+	halo = love.graphics.newImage("image_assets/chars/halo.png")
 	if tableContains(args, "marigold") then
 		marigold = love.graphics.newImageFont("image_assets/ui_assets/marigold.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!?.,#*x()<>:;/-=+v\\^", 1)
 		love.graphics.setFont(marigold)
@@ -64,6 +65,9 @@ function love.load(args)
 	meteorx, meteory, meteorwidth, meteorheight, meteorvel, meteorcount = -999, -999, 0, 0, 0, 0
 	disaster_Stored = 0
 	paused = false
+	optionsMenu = false
+	shopMenu = false
+	buyMenu = false
 	pausemenu_highlight = 0
 	dead, botdead = 0, 0
 	love.filesystem.setIdentity("random_disaster_survival", true)
@@ -106,7 +110,7 @@ function love.load(args)
 	disastDelay = tonumber(savetable[11])
 	print(savetable[11])
 	guh = love.math.random(0,100)
-	if guh == 20 then 
+	if guh <= 10 then 
 		char = love.graphics.newImage("image_assets/chars/char_main_2.png") 
 	end
 	love.window.setMode(1280, 720, {resizable=true})
@@ -130,6 +134,8 @@ function love.load(args)
 	death_messages_2 = {"", "", "", "YOU", "",  "TRY IT NEXT TIME.", disastNamesThatWillOnlyBeUsedInTheDeathMessage[disaster], ""}
 	modifier = 0
 	lightningx, lightningy = -999, -999
+	guardian_angel = 1
+	guardian_angel_active = 1
 end
 
 function moveToward(x1, y1, x2, y2, speed, deltaTime)
@@ -171,108 +177,164 @@ function love.keypressed(key, sc, isrepeat)
 	end
 	if key=='escape' and isrepeat ~= 'true' then
 		if paused then
-			paused = false
+			if optionsMenu or shopMenu then
+				optionsMenu, shopMenu = false, false
+				pausemenu_highlight = 0
+			else
+				paused = false
+			end
 		else
 			paused = true
+			optionsMenu, shopMenu = false, false
 			pausemenu_highlight = 0
 		end
 	end
 	if paused then
+		if optionsMenu then
+			maxPauseOptions = 5
+		elseif shopMenu then
+			maxPauseOptions = 1
+		else
+			maxPauseOptions = 3
+		end
 		if key=="down" and isrepeat ~= 'true' then
 			pausemenu_highlight = pausemenu_highlight + 1
-			if pausemenu_highlight > 7 then 
+			if pausemenu_highlight > maxPauseOptions then 
 				pausemenu_highlight = 0
 			end
 		end
 		if key=="up" and isrepeat ~= 'true' then
 			pausemenu_highlight = pausemenu_highlight - 1
 			if pausemenu_highlight < 0 then 
-				pausemenu_highlight = 7
+				pausemenu_highlight = maxPauseOptions
 			end
 		end
-		if (key=="left" or key=="a") and isrepeat~= 'true' then
-			if pausemenu_highlight == 0 then
-				scaling_method = scaling_method - 1
-				if scaling_method < 1 then 
-					scaling_method = 3
+		if optionsMenu then
+			if (key=="left" or key=="a") and isrepeat~= 'true' then
+				if pausemenu_highlight == 0 then
+					scaling_method = scaling_method - 1
+					if scaling_method < 1 then 
+						scaling_method = 3
+					end
+					push.setupScreen(192, 144, {upscale = scaling_methods[scaling_method]}) 
+				elseif pausemenu_highlight == 1 and not forcefullscreen then
+					if fullscreen == 1 then 
+						fullscreen = 2 
+					else
+						fullscreen = 1 
+					end
+					love.window.setFullscreen(truefalse_table[fullscreen])
+					push.setupScreen(192, 144, {upscale = scaling_methods[scaling_method]})   
+				elseif pausemenu_highlight == 2 then
+					if bot_toggle == 1 then 
+						bot_toggle = 2 
+					else 
+						bot_toggle = 1 
+					end   
+				elseif pausemenu_highlight == 3 then
+					time_speed = time_speed - 1
+					if time_speed < 1 then 
+						time_speed = 9
+					end
+				elseif pausemenu_highlight == 4 then
+					if hardcore == "true" then 
+						hardcore = "false" 
+					else
+						hardcore = "true"
+					end
+				elseif pausemenu_highlight == 5 then
+					disastDelay = disastDelay - 1
+					if disastDelay < 2 then 
+						disastDelay = 10
+					end
 				end
-				push.setupScreen(192, 144, {upscale = scaling_methods[scaling_method]}) 
-			elseif pausemenu_highlight == 1 and not forcefullscreen then
-				if fullscreen == 1 then 
-					fullscreen = 2 
-				else
-					fullscreen = 1 
+			end
+			if (key=="right" or key=="d" or key=="return" or key=="space" or key=="z") and isrepeat~= 'true' then
+				if pausemenu_highlight == 0 then
+					scaling_method = scaling_method + 1
+					if scaling_method > 3 then 
+						scaling_method = 1
+					end
+					push.setupScreen(192, 144, {upscale = scaling_methods[scaling_method]})  
+				elseif pausemenu_highlight == 1 and not forcefullscreen then
+					if fullscreen == 1 then 
+						fullscreen = 2 
+					else
+						fullscreen = 1 
+					end
+					love.window.setFullscreen(truefalse_table[fullscreen])
+					push.setupScreen(192, 144, {upscale = scaling_methods[scaling_method]})   
+				elseif pausemenu_highlight == 2 then
+					if bot_toggle == 1 then 
+						bot_toggle = 2 
+					else 
+						bot_toggle = 1 
+					end 
+				elseif pausemenu_highlight == 3 then
+					time_speed = time_speed + 1
+					if time_speed > 9 then 
+						time_speed = 1
+					end  
+				elseif pausemenu_highlight == 4 then
+					if hardcore == "true" then 
+						hardcore = "false" 
+					else
+						hardcore = "true"
+					end
+				elseif pausemenu_highlight == 5 then
+					disastDelay = disastDelay + 1
+					if disastDelay > 10 then 
+						disastDelay = 2
+					end
 				end
-				love.window.setFullscreen(truefalse_table[fullscreen])
-				push.setupScreen(192, 144, {upscale = scaling_methods[scaling_method]})   
-			elseif pausemenu_highlight == 2 then
-				if bot_toggle == 1 then 
-					bot_toggle = 2 
-				else 
-					bot_toggle = 1 
-				end   
-			elseif pausemenu_highlight == 3 then
-				time_speed = time_speed - 1
-				if time_speed < 1 then 
-					time_speed = 9
-				end
-			elseif pausemenu_highlight == 4 then
-				if hardcore == "true" then 
-					hardcore = "false" 
-				else
-					hardcore = "true"
-				end
-			elseif pausemenu_highlight == 5 then
-				disastDelay = disastDelay - 1
-				if disastDelay < 2 then 
-					disastDelay = 10
+				if (key=="return" or key=="z" or key=="space") and isrepeat~= 'true' then
+					if pausemenu_highlight==6 then
+						optionsMenu = false
+					end
 				end
 			end
 		end
-		if (key=="right" or key=="d" or key=="return" or key=="space" or key=="z") and isrepeat~= 'true' then
-			if pausemenu_highlight == 0 then
-				scaling_method = scaling_method + 1
-				if scaling_method > 3 then 
-					scaling_method = 1
+		if shopMenu then
+			if buyMenu then
+				if (key=="return" or key=="z" or key=="space") and isrepeat~= 'true' then
+					if coins >= 15 then
+						coins = coins - 15
+						guardian_angel = guardian_angel + 1
+					end
+					buyMenu = false
 				end
-				push.setupScreen(192, 144, {upscale = scaling_methods[scaling_method]})  
-			elseif pausemenu_highlight == 1 and not forcefullscreen then
-				if fullscreen == 1 then 
-					fullscreen = 2 
-				else
-					fullscreen = 1 
+				if (key=="escape" or key=="backspace") and isrepeat~= 'true' then
+					--Dont
+					buyMenu = false
 				end
-				love.window.setFullscreen(truefalse_table[fullscreen])
-				push.setupScreen(192, 144, {upscale = scaling_methods[scaling_method]})   
-			elseif pausemenu_highlight == 2 then
-				if bot_toggle == 1 then 
-					bot_toggle = 2 
-				else 
-					bot_toggle = 1 
-				end 
-			elseif pausemenu_highlight == 3 then
-				time_speed = time_speed + 1
-				if time_speed > 9 then 
-					time_speed = 1
-				end  
-			elseif pausemenu_highlight == 4 then
-				if hardcore == "true" then 
-					hardcore = "false" 
-				else
-					hardcore = "true"
+			else
+				if (key=="right" or key=="d" or key=="left" or key=="a") and isrepeat~= 'true' then
+					if pausemenu_highlight == 0 then
+						if guardian_angel_active == 1 and guardian_angel >= 1 then 
+							guardian_angel_active = 2
+						else
+							guardian_angel_active = 1 
+						end
+					end
 				end
-			elseif pausemenu_highlight == 5 then
-				disastDelay = disastDelay + 1
-				if disastDelay > 10 then 
-					disastDelay = 2
+				if (key=="return" or key=="z" or key=="space") and isrepeat~= 'true' then
+					buyMenu = true
 				end
 			end
 		end
-		if (key=="return" or key=="z" or key=="space") and isrepeat~= 'true' then
-			if pausemenu_highlight==7 then
-				love.event.quit(0)
-			elseif pausemenu_highlight==6 then
-				paused = false
+		if not optionsMenu and not shopMenu then 
+			if (key=="return" or key=="z" or key=="space") and isrepeat~= 'true' then
+				if pausemenu_highlight==3 then
+					love.event.quit(0)
+				elseif pausemenu_highlight==2 then
+					paused = false
+				elseif pausemenu_highlight==1 then
+					shopMenu = true
+					pausemenu_highlight = 0
+				elseif pausemenu_highlight==0 then
+					optionsMenu = true
+					pausemenu_highlight = 0
+				end
 			end
 		end
 	end
@@ -309,15 +371,29 @@ function stopDisaster()
 		dead = 0
 	else
 		if hardcore=="true" then
-		hardcorewins = hardcorewins+1
-		coins = coins + love.math.random(3,7)
+			hardcorewins = hardcorewins+1
+			if guardian_angel_used then
+				coins = coins + math.floor(love.math.random(3,7) / 2)
+			else
+				coins = coins + love.math.random(3,7)
+			end
 		else
-		wins = wins+1
-		coins = coins + love.math.random(1,5)
+			wins = wins+1
+			if guardian_angel_used then
+				coins = coins + math.floor(love.math.random(1,5) / 2)
+			else
+				coins = coins + love.math.random(1,5)
+			end
 		end
 	end
 	if botdead ~= 0 then
 		botdead = 0
+	end
+	if guardian_angel_active == 2 then
+		guardian_angel = guardian_angel - 1
+		if guardian_angel <= 0 then
+			guardian_angel_active = 1
+		end
 	end
 end
 
@@ -625,8 +701,11 @@ else
 	if jump_sound_check == 1 then
 		jump_sound_check = 0
 	end
-end -- 
+end
 if playy >= 144 or ( (CheckCollision(zombx, zomby, zombwidth, zombheight, playx, playy, playwidth, playheight) and disaster==9) or (CheckCollision(lightningx, lightningy-144, 24, 144, playx, playy, playwidth, playheight) and lightningActive) or  CheckCollision(lasersx[2]+2, lasersy[2]+2, lasersw-4, lasersh-4, playx, playy, playwidth, playheight) or CheckCollision(lasersx[1]+2, lasersy[1]+2, lasersw-4, lasersh-4, playx, playy, playwidth, playheight) or (CheckCollision(96-((16*disasTimer)/2), 72-((16*disasTimer)/2), disasTimer*16, disasTimer*16, playx, playy, playwidth, playheight) and disaster==6) or (CheckCollision(boomx, boomy, boomwidth, boomheight, playx, playy, playwidth, playheight) and boomactive) or CheckCollision(meteorx, meteory, meteorwidth, meteorheight, playx, playy, playwidth, playheight) or CheckCollision(lavax, lavay, lavawidth, lavaheight, playx, playy, playwidth, playheight) or CheckCollision(beamx, beamy, beamwidth, beamheight, playx, playy, playwidth, playheight) ) and dead~=1 then 
+	if guardian_angel_active and not guardian_angel_used then
+		guardian_angel_used = true
+	else
 	if hardcore == "true" then
 		death_message = love.math.random(1, #death_messages_1)
 		death_messages_2[7] = disastNamesThatWillOnlyBeUsedInTheDeathMessage[disaster]
@@ -645,6 +724,7 @@ if playy >= 144 or ( (CheckCollision(zombx, zomby, zombwidth, zombheight, playx,
 	else
 		love.audio.play(deathaudio)
    		dead, playx, playy = 1, (platwidth / 2)-8, 0
+	end
 	end
 end
 if (CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, botx, boty, botwidth, botheight) and enableFloatPlat)  or CheckCollision(platx, platy, platwidth, platheight, botx, boty, botwidth, botheight) or CheckCollision(rightplatx, rightplaty, rightplatwidth, rightplatheight, botx, boty, botwidth, botheight) or CheckCollision(leftplatx, leftplaty, leftplatwidth, leftplatheight, botx, boty, botwidth, botheight) then
@@ -808,6 +888,9 @@ function love.draw()
 	else
 		love.graphics.draw(char, playx+(13*(playwidth/10)), playy, 0, playwidth/-10, playwidth/10)
 	end
+	if guardian_angel_used then
+		love.graphics.draw(halo, playx+(9*(playwidth/10)), playy-5, 0, playwidth/-10, playwidth/10)
+	end
 	love.graphics.setColor(worldR, worldG, worldB, 1-(botdead/2))
 	if bot_toggle == 1 then
 		if botdir == "right" then
@@ -831,7 +914,39 @@ function love.draw()
 		love.graphics.setColor(0, 0, 0, 0.5)
 		love.graphics.rectangle('fill', 0, 0, 192, 144)
 		love.graphics.setColor(1, 1, 1, 1)
-		love.graphics.print("PAUSED", 2, 2, 0, 2)
+		if not optionsMenu and not shopMenu then
+			love.graphics.print("PAUSED", 2, 2, 0, 2)
+			if pausemenu_highlight == 0 then
+				love.graphics.print("OPTIONS FOR GRAPHICS, GAMEPLAY, ETC.", 0, 118)
+				love.graphics.setColor(1, 1, 0, 1)
+			else
+				love.graphics.setColor(1, 1, 1, 1)
+			end
+			love.graphics.print("OPTIONS", 2, 16, 0, 2)
+			if pausemenu_highlight == 1 then
+				love.graphics.print("BUY POWERUPS, MODIFIERS, AND MORE", 0, 118)
+				love.graphics.setColor(1, 1, 0, 1)
+			else
+				love.graphics.setColor(1, 1, 1, 1)
+			end
+			love.graphics.print("SHOP", 2, 28, 0, 2)
+			if pausemenu_highlight == 2 then
+				love.graphics.print("UNPAUSE AND RETURN TO THE GAME", 0, 118)
+				love.graphics.setColor(1, 1, 0, 1)
+			else
+				love.graphics.setColor(1, 1, 1, 1)
+			end
+			love.graphics.print("BACK TO GAME", 2, 40, 0, 2)
+			if pausemenu_highlight == 3 then
+				love.graphics.print("SAVE YOUR COINS, WINS, AND DEATHS (TOP-RIGHT)", 0, 118)
+				love.graphics.print("THEN EXIT AND RETURN TO DESKTOP/OS", 0, 124)
+				love.graphics.setColor(1, 1, 0, 1)
+			else
+				love.graphics.setColor(1, 1, 1, 1)
+			end
+			love.graphics.print("SAVE + EXIT GAME", 2, 52, 0, 2)
+		elseif optionsMenu then
+			love.graphics.print("OPTIONS", 2, 2, 0, 2)
 		if pausemenu_highlight == 0 then
 			love.graphics.print(scaledesc_line1[scaling_method], 0, 118)
 			love.graphics.print(scaledesc_line2[scaling_method], 0, 124)
@@ -888,29 +1003,26 @@ function love.draw()
 			love.graphics.setColor(1, 1, 1, 1)
 		end
 		love.graphics.print("DISASTER DELAY: "..disastDelay, 2, 76, 0, 2)
-		if pausemenu_highlight == 6 then
-			love.graphics.print("UNPAUSE AND RETURN TO THE GAME", 0, 118)
+		elseif shopMenu then
+			love.graphics.print("SHOP", 2, 2, 0, 2)
+		if pausemenu_highlight == 0 then
+			love.graphics.print("GIVES YOU A SECOND CHANCE, BUT COIN PROFIT IS HALVED", 0, 118)
+			love.graphics.print("OWNED:"..guardian_angel.." ACTIVE:"..yesno_select[guardian_angel_active], 0, 124)
 			love.graphics.setColor(1, 1, 0, 1)
 		else
 			love.graphics.setColor(1, 1, 1, 1)
 		end
-		love.graphics.print("BACK TO GAME", 2, 88, 0, 2)
-		if pausemenu_highlight == 7 then
-			love.graphics.print("SAVE YOUR COINS, WINS, AND DEATHS (TOP-RIGHT)", 0, 118)
-			love.graphics.print("THEN EXIT AND RETURN TO DESKTOP/OS", 0, 124)
-			love.graphics.setColor(1, 1, 0, 1)
-		else
-			love.graphics.setColor(1, 1, 1, 1)
-		end
-		love.graphics.print("SAVE + EXIT GAME", 2, 100, 0, 2)
-		love.graphics.printf("#x"..coins,1,1,191,"right",0,1)
-		if hardcore == "true" then
-			love.graphics.printf("\\x"..hardcorewins,1,8,191,"right",0,1)
-			love.graphics.printf("\\^x"..hardcorehighscore,1,15,191,"right",0,1)
-		else
-			love.graphics.printf("vx"..wins,1,8,191,"right",0,1)
-			love.graphics.printf("*x"..deaths,1,15,191,"right",0,1)
-		end
+		love.graphics.print("GUARDIAN ANGEL", 2, 16, 0, 2)
+	end
+	love.graphics.setColor(1, 1, 1, 1)
+	love.graphics.printf("#x"..coins,1,1,191,"right",0,1)
+	if hardcore == "true" then
+		love.graphics.printf("\\x"..hardcorewins,1,8,191,"right",0,1)
+		love.graphics.printf("\\^x"..hardcorehighscore,1,15,191,"right",0,1)
+	else
+		love.graphics.printf("vx"..wins,1,8,191,"right",0,1)
+		love.graphics.printf("*x"..deaths,1,15,191,"right",0,1)
+	end
 	end
 	else
 		love.graphics.printf(death_messages_1[death_message],0,8,96,"center",0,2)
