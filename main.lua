@@ -12,13 +12,20 @@ function love.load(args)
 	disaster = 0
 	disasTimer = 0
 	bg = love.graphics.newImage("image_assets/ground/bg.png")
+	bgW, bgH = bg:getDimensions()
 	nightbg = love.graphics.newImage("image_assets/ground/nightbg.png")
+	nightbgW, nightbgH = nightbg:getDimensions()
 	sunset = love.graphics.newImage("image_assets/ground/sunset.png")
+	sunsetW, sunsetH = sunset:getDimensions()
 	sideplat = love.graphics.newImage("image_assets/ground/miniplat.png")
+	sideplatW, sideplatH = sideplat:getDimensions()
 	floatplat = love.graphics.newImage("image_assets/ground/floatplat.png")
+	floatplatW, floatplatH = floatplat:getDimensions()
 	floor = love.graphics.newImage("image_assets/ground/floor.png")
+	floorW, floorH = floor:getDimensions()
 	lava = love.graphics.newImage("image_assets/disaster_assets/lava.png")
 	acid = love.graphics.newImage("image_assets/disaster_assets/acid.png")
+	gas = love.graphics.newImage("image_assets/disaster_assets/gas.png")
 	kaboom = love.graphics.newImage("image_assets/disaster_assets/kaboom.png")
 	boomwarn = love.graphics.newImage("image_assets/disaster_assets/boomwarn.png")
 	beam = love.graphics.newImage("image_assets/disaster_assets/BEAM.png")
@@ -36,14 +43,14 @@ function love.load(args)
 		marigold = love.graphics.newImageFont("image_assets/ui_assets/marigold.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!?.,#*x()<>:;/-=+v\\^", 1)
 		love.graphics.setFont(marigold)
 	else
-		font = love.graphics.newImageFont("image_assets/ui_assets/font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!?.,#*x()<>:;/-=+v\\^", 1)
+		font = love.graphics.newImageFont("image_assets/ui_assets/font_alt.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!?.,#*x()<>:;/-=+v\\^", 1)
 		love.graphics.setFont(font)
 	end
 	yesno_select = {"*", "v"}
 	time_speeds_string = {"1/2", "1", "2", "3", "5", "10", "20", "30", "PAUSED"} 
 	time_speeds_number = {0.5, 1, 2, 3, 5, 10, 20, 30, 1/0} --honestly idk if 1/0 for infinity is the *best* method here, but if it works it works on god
-	warnquads = {love.graphics.newQuad(0, 0, 192, 32, 192, 288), love.graphics.newQuad(0, 32, 192, 32, 192, 288), love.graphics.newQuad(0, 64, 192, 32, 192, 288), love.graphics.newQuad(0, 96, 192, 32, 192, 288), love.graphics.newQuad(0, 128, 192, 32, 192, 288), love.graphics.newQuad(0, 160, 192, 32, 192, 288), love.graphics.newQuad(0, 192, 192, 32, 192, 288), love.graphics.newQuad(0, 224, 192, 32, 192, 288), love.graphics.newQuad(0, 256, 192, 32, 192, 288)}
-	modifiers = {"MINI PLAYERS", "LOW GRAVITY", "HIGH GRAVITY", "MISSING PLATFORM", "GIANT PLAYERS"}
+	warnquads = {love.graphics.newQuad(0, 0, 192, 32, 192, 288), love.graphics.newQuad(0, 32, 192, 32, 192, 288), love.graphics.newQuad(0, 64, 192, 32, 192, 288), love.graphics.newQuad(0, 96, 192, 32, 192, 288), love.graphics.newQuad(0, 128, 192, 32, 192, 288), love.graphics.newQuad(0, 160, 192, 32, 192, 288), love.graphics.newQuad(0, 192, 192, 32, 192, 288), love.graphics.newQuad(0, 224, 192, 32, 192, 288), love.graphics.newQuad(0, 256, 192, 32, 192, 288), love.graphics.newQuad(0, 256, 192, 32, 192, 288)}
+	modifiers = {"MINI PLAYERS", "LOW GRAVITY", "HIGH GRAVITY", "MISSING PLATFORM", "GIANT PLAYERS", "MIRROR MODE"}
 	jumpaudio = love.audio.newSource("audio_assets/why_does_this_kinda_sound_like_super_mario_world_jump.wav", "static")
 	jump_sound_check = 0
 	explodeaudio = love.audio.newSource("audio_assets/boom.wav", "static")
@@ -73,7 +80,7 @@ function love.load(args)
 	love.filesystem.setIdentity("random_disaster_survival", true)
 	if love.filesystem.getInfo("savedata") == nil or tableContains(args, "reset_save_data_like_really_i_want_to_this_text_is_this_long_to_guarantee_i_intended_this") then
 		file = love.filesystem.newFile("savedata", "w")
-		file:write("0\n0\n0\n1\n1\n1\n6\nfalse\n0\n0\n5")
+		file:write("0\n0\n0\n1\n1\n1\n6\nfalse\n0\n0\n5\n0\n1")
 		file:close()
 	end
 	savetable = {}
@@ -109,6 +116,12 @@ function love.load(args)
 	print(savetable[10])
 	disastDelay = tonumber(savetable[11])
 	print(savetable[11])
+	guardian_angel = tonumber(savetable[12]) or 0
+	print(savetable[12])
+	guardian_angel_active = tonumber(savetable[13]) or 1
+	print(savetable[13])
+	jump_boost = 3
+	jump_boost_active = 1
 	guh = love.math.random(0,100)
 	if guh <= 10 then 
 		char = love.graphics.newImage("image_assets/chars/char_main_2.png") 
@@ -134,8 +147,13 @@ function love.load(args)
 	death_messages_2 = {"", "", "", "YOU", "",  "TRY IT NEXT TIME.", disastNamesThatWillOnlyBeUsedInTheDeathMessage[disaster], ""}
 	modifier = 0
 	lightningx, lightningy = -999, -999
-	guardian_angel = 1
-	guardian_angel_active = 1
+	guardian_angel_timer = 0
+	shopItems = {"GUARDIAN ANGEL", "JUMP BOOST (x3)"}
+	shopPrices = {15, 10}
+	mirror = love.math.newTransform(0,0,0,-1,1,192)
+	default = love.math.newTransform()
+	MirrorMode = false
+	powerLock = false
 end
 
 function moveToward(x1, y1, x2, y2, speed, deltaTime)
@@ -160,7 +178,7 @@ function tableContains(table, content)
 end
 
 function love.quit()
-	success, err = love.filesystem.write("savedata", wins.."\n"..deaths.."\n"..coins.."\n"..fullscreen.."\n"..scaling_method.."\n"..bot_toggle.."\n"..time_speed.."\n"..hardcore.."\n"..hardcorewins.."\n"..hardcorehighscore.."\n"..disastDelay)
+	success, err = love.filesystem.write("savedata", wins.."\n"..deaths.."\n"..coins.."\n"..fullscreen.."\n"..scaling_method.."\n"..bot_toggle.."\n"..time_speed.."\n"..hardcore.."\n"..hardcorewins.."\n"..hardcorehighscore.."\n"..disastDelay.."\n"..guardian_angel.."\n"..guardian_angel_active)
 	return not success
 end
 
@@ -175,7 +193,7 @@ function love.keypressed(key, sc, isrepeat)
 	if hardcoredead and not isrepeat then
 		love.event.quit(0)
 	end
-	if key=='escape' and isrepeat ~= 'true' then
+	if key=='escape' and isrepeat ~= 'true' and not buyMenu then
 		if paused then
 			if optionsMenu or shopMenu then
 				optionsMenu, shopMenu = false, false
@@ -297,9 +315,13 @@ function love.keypressed(key, sc, isrepeat)
 		if shopMenu then
 			if buyMenu then
 				if (key=="return" or key=="z" or key=="space") and isrepeat~= 'true' then
-					if coins >= 15 then
-						coins = coins - 15
-						guardian_angel = guardian_angel + 1
+					if coins >= shopPrices[pausemenu_highlight+1] then
+						coins = coins - shopPrices[pausemenu_highlight+1]
+						if pausemenu_highlight == 0 then
+							guardian_angel = guardian_angel + 1
+						elseif pausemenu_highlight == 1 then
+							jump_boost = jump_boost + 3
+						end
 					end
 					buyMenu = false
 				end
@@ -315,10 +337,18 @@ function love.keypressed(key, sc, isrepeat)
 						else
 							guardian_angel_active = 1 
 						end
+					elseif pausemenu_highlight == 1 then
+						if jump_boost_active == 1 and jump_boost >= 1 then 
+							jump_boost_active = 2
+						else
+							jump_boost_active = 1 
+						end
 					end
 				end
 				if (key=="return" or key=="z" or key=="space") and isrepeat~= 'true' then
-					buyMenu = true
+					if coins >= shopPrices[pausemenu_highlight+1] then
+						buyMenu = true
+					end
 				end
 			end
 		end
@@ -342,7 +372,7 @@ end
 
 function stopDisaster()
 	disasTimer = 0
-	if disaster == 1 then			-- disaster.... outitialization??? tasks (e.g. zeroing out the lava variables so you dont die post-lava) go here
+	if disaster == 1 or disaster == 10 then			-- disaster.... outitialization??? tasks (e.g. zeroing out the lava variables so you dont die post-lava) go here
 		lavawidth, lavaheight, lavax, lavay = 0, 0, -999, -999
 	elseif disaster == 3 then
 		beamwidth, beamheight, beamx, beamy = 0, 0, -999, -999
@@ -362,6 +392,8 @@ function stopDisaster()
 		grav = 100
 	elseif modifier == 4 then
 		enableFloatPlat = true
+	elseif modifier == 6 then
+		MirrorMode = false
 	end
 	previous_disaster = disaster
 	disaster = 0
@@ -395,11 +427,24 @@ function stopDisaster()
 			guardian_angel_active = 1
 		end
 	end
+	if guardian_angel_used then
+		guardian_angel_used = false
+	end
+	if jump_boost_active == 2 then
+		jump_boost = jump_boost - 1
+		if jump_boost <= 0 then
+			jump_boost_active = 1
+		end
+	end
+	powerLock = false
 end
 
 function love.update(dt)
 if not hardcoredead and not paused then
 	time = (time or 0)+dt/time_speeds_number[time_speed]
+	if guardian_angel_timer > 0 then
+		guardian_angel_timer = guardian_angel_timer - dt
+	end
 	if (time or 0) <=60 then
 		worldR = ((4-(0.57*(time*(0.0666666))))/4) --why does any of this code work i'm so confused
 		worldG = ((3-(0.61*(time*(0.0500000))))/3)
@@ -435,13 +480,14 @@ if disaster == 0 then
 		if disaster_Stored == 0 then
 			love.audio.play(warnaudio)
 			disaster_Stored = love.math.random(1, 9)
+			powerLock = true
 			while disaster_Stored == previous_disaster do
 				disaster_Stored = love.math.random(1, 9)
 		    end
-			if love.math.random(1, 10) == 10 then
-				modifier = love.math.random(1,5)
+			if true then --love.math.random(1, 10) == 10 then
+				modifier = love.math.random(1,6)
 				while disaster_Stored == 4 and modifier == 4 do
-					love.math.random(1,5)
+					modifer = love.math.random(1,6)
 				end
 			end
 		end
@@ -464,6 +510,8 @@ if disaster == 0 then
 				playwidth, playheight = 12.5, 26.25
 				botwidth, botheight = 12.5, 26.25
 				zombwidth, zombheight = 12.5, 26.25
+			elseif modifier == 6 then
+				MirrorMode = true
 			end
 			-- disaster initialization tasks (e.g. making/setting variables) go here
 			if disaster == 1 then
@@ -491,6 +539,8 @@ if disaster == 0 then
 			elseif disaster == 9 then
 				disasTimer = 0
 				zombx, zomby, zombdir, zombact, zombtime = (platwidth / 2)-5, 0, "left", 0, 3
+			elseif disaster == 10 then
+				lavawidth, lavaheight, lavax, lavay = 192, 64, 0, -64
 			end
 		end
 		
@@ -661,6 +711,15 @@ else
 			zombact = 0
 		end
 	end
+	elseif disaster == 10 then
+		if disasTimer >= 2 and lavay <= 0 then
+			lavay = lavay + dt*25
+		else
+			disasTimer = disasTimer + dt
+			if disasTimer >= 5 then
+				stopDisaster()
+			end
+		end
 	end
 end
 	-- This is how to assign keyboard inputs.
@@ -687,7 +746,7 @@ if (CheckCollision(floatplatx, floatplaty, floatplatwidth, floatplatheight, play
 		playx = playx + (50*floatplatdir)*dt
 	end
 	if love.keyboard.isDown('space', 'z', 'w', 'up') then
-		playvel = playjump*-1
+		playvel = (playjump*-1)*(((jump_boost_active-1)/2)+1)
 		playy = playy + playvel * dt
 		if jump_sound_check == 0 then
 			success = love.audio.play(jumpaudio)
@@ -702,9 +761,10 @@ else
 		jump_sound_check = 0
 	end
 end
-if playy >= 144 or ( (CheckCollision(zombx, zomby, zombwidth, zombheight, playx, playy, playwidth, playheight) and disaster==9) or (CheckCollision(lightningx, lightningy-144, 24, 144, playx, playy, playwidth, playheight) and lightningActive) or  CheckCollision(lasersx[2]+2, lasersy[2]+2, lasersw-4, lasersh-4, playx, playy, playwidth, playheight) or CheckCollision(lasersx[1]+2, lasersy[1]+2, lasersw-4, lasersh-4, playx, playy, playwidth, playheight) or (CheckCollision(96-((16*disasTimer)/2), 72-((16*disasTimer)/2), disasTimer*16, disasTimer*16, playx, playy, playwidth, playheight) and disaster==6) or (CheckCollision(boomx, boomy, boomwidth, boomheight, playx, playy, playwidth, playheight) and boomactive) or CheckCollision(meteorx, meteory, meteorwidth, meteorheight, playx, playy, playwidth, playheight) or CheckCollision(lavax, lavay, lavawidth, lavaheight, playx, playy, playwidth, playheight) or CheckCollision(beamx, beamy, beamwidth, beamheight, playx, playy, playwidth, playheight) ) and dead~=1 then 
+if playy >= 144 or ( (CheckCollision(zombx, zomby, zombwidth, zombheight, playx, playy, playwidth, playheight) and disaster==9) or (CheckCollision(lightningx, lightningy-144, 24, 144, playx, playy, playwidth, playheight) and lightningActive) or  CheckCollision(lasersx[2]+2, lasersy[2]+2, lasersw-4, lasersh-4, playx, playy, playwidth, playheight) or CheckCollision(lasersx[1]+2, lasersy[1]+2, lasersw-4, lasersh-4, playx, playy, playwidth, playheight) or (CheckCollision(96-((16*disasTimer)/2), 72-((16*disasTimer)/2), disasTimer*16, disasTimer*16, playx, playy, playwidth, playheight) and disaster==6) or (CheckCollision(boomx, boomy, boomwidth, boomheight, playx, playy, playwidth, playheight) and boomactive) or CheckCollision(meteorx, meteory, meteorwidth, meteorheight, playx, playy, playwidth, playheight) or CheckCollision(lavax, lavay, lavawidth, lavaheight, playx, playy, playwidth, playheight) or CheckCollision(beamx, beamy, beamwidth, beamheight, playx, playy, playwidth, playheight) ) and dead~=1 and guardian_angel_timer<=0 then 
 	if guardian_angel_active and not guardian_angel_used then
 		guardian_angel_used = true
+		guardian_angel_timer = 5
 	else
 	if hardcore == "true" then
 		death_message = love.math.random(1, #death_messages_1)
@@ -809,13 +869,16 @@ function love.draw()
 		love.graphics.draw(border,border_width+(border_height/2-(96*(border_width/192))),0,math.rad(90),(border_height/144))
 	end
 	push.start()
+	if MirrorMode then
+		love.graphics.applyTransform(mirror)
+	end
 	if not hardcoredead then
 	love.graphics.setColor(1,1,1)
-	love.graphics.draw(bg, 0, 0)
+	love.graphics.draw(bg, 0, 0, 0, 192/bgW, 144/bgH)
 	love.graphics.setColor(1,1,1,sunsetTransparency)
-	love.graphics.draw(sunset, 0, 0)
+	love.graphics.draw(sunset, 0, 0, 0, 192/sunsetW, 144/sunsetH)
 	love.graphics.setColor(1,1,1,starTransparency)
-	love.graphics.draw(nightbg, 0, 0)
+	love.graphics.draw(nightbg, 0, 0, 0, 192/nightbgW, 144/nightbgH)
 	love.graphics.setColor(worldR, worldG, worldB)
 	love.graphics.draw(floor, platx, platy)
 	love.graphics.draw(sideplat, leftplatx, leftplaty)
@@ -831,8 +894,6 @@ function love.draw()
 		love.graphics.setColor(1,1,1)
 		if boomactive == false then
 			love.graphics.draw(boomwarn, boomx, boomy)
-		elseif modifier == 3 then
-			grav = 100
 		else
 			love.graphics.draw(kaboom, boomx, boomy)
 		end
@@ -875,6 +936,10 @@ function love.draw()
 			love.graphics.draw(zombie, zombx+(13*(zombwidth/10)), zomby, 0, zombwidth/-10, zombwidth/10)
 		end
 	end
+	if disaster == 10 then
+		love.graphics.setColor(1,1,1)
+		love.graphics.draw(gas, lavax, lavay)
+	end
 	love.graphics.setColor(255, 255, 255)
 	if disaster_Stored ~= 0 then
 		love.graphics.draw(warn, warnquads[disaster_Stored], 0, 0)
@@ -882,14 +947,17 @@ function love.draw()
 			love.graphics.print("+"..modifiers[modifier], 0, 32)
 		end
 	end
+	if guardian_angel_used then
+		love.graphics.draw(halo, playx+(9*(playwidth/10)), playy-5, 0, playwidth/-10, playwidth/10)
+	end
 	love.graphics.setColor(worldR, worldG, worldB, 1-(dead/2))
+	if guardian_angel_timer > 0 then
+		love.graphics.setColor(worldR, worldG, worldB, (math.sin(guardian_angel_timer*10)+1)/2)
+	end
 	if playdir == "right" then
 		love.graphics.draw(char, playx-(3*(playwidth/10)), playy, 0, playwidth/10)
 	else
 		love.graphics.draw(char, playx+(13*(playwidth/10)), playy, 0, playwidth/-10, playwidth/10)
-	end
-	if guardian_angel_used then
-		love.graphics.draw(halo, playx+(9*(playwidth/10)), playy-5, 0, playwidth/-10, playwidth/10)
 	end
 	love.graphics.setColor(worldR, worldG, worldB, 1-(botdead/2))
 	if bot_toggle == 1 then
@@ -925,7 +993,13 @@ function love.draw()
 			love.graphics.print("OPTIONS", 2, 16, 0, 2)
 			if pausemenu_highlight == 1 then
 				love.graphics.print("BUY POWERUPS, MODIFIERS, AND MORE", 0, 118)
-				love.graphics.setColor(1, 1, 0, 1)
+				if powerLock then
+					love.graphics.setColor(1, 0, 0, 1)
+					love.graphics.print("THE SHOP IS CLOSED DURING DISASTERS.", 0, 124)
+					love.graphics.print("PLEASE SHOP DURING INTERMISSIONS.", 0, s)
+				else
+					love.graphics.setColor(1, 1, 0, 1)
+				end
 			else
 				love.graphics.setColor(1, 1, 1, 1)
 			end
@@ -1008,11 +1082,36 @@ function love.draw()
 		if pausemenu_highlight == 0 then
 			love.graphics.print("GIVES YOU A SECOND CHANCE, BUT COIN PROFIT IS HALVED", 0, 118)
 			love.graphics.print("OWNED:"..guardian_angel.." ACTIVE:"..yesno_select[guardian_angel_active], 0, 124)
-			love.graphics.setColor(1, 1, 0, 1)
+			if coins >= 15 then
+				love.graphics.setColor(1, 1, 0, 1)
+			else
+				love.graphics.setColor(1, 0, 0, 1)
+				love.graphics.print("YOU CANNOT BUY THIS ITEM. YOU ARE "..shopPrices[1]-coins.." COINS SHORT.", 0, 130)
+			end
 		else
 			love.graphics.setColor(1, 1, 1, 1)
 		end
-		love.graphics.print("GUARDIAN ANGEL", 2, 16, 0, 2)
+		love.graphics.print("GUARDIAN ANGEL - #x15", 2, 16, 0, 2)
+		if pausemenu_highlight == 1 then
+			love.graphics.print("MAKES YOU JUMP EXTRA HIGH", 0, 118)
+			love.graphics.print("OWNED:"..jump_boost.." ACTIVE:"..yesno_select[jump_boost_active], 0, 124)
+			if coins >= 15 then
+				love.graphics.setColor(1, 1, 0, 1)
+			else
+				love.graphics.setColor(1, 0, 0, 1)
+				love.graphics.print("YOU CANNOT BUY THIS ITEM. YOU ARE "..shopPrices[2]-coins.." COINS SHORT.", 0, 130)
+			end
+		else
+			love.graphics.setColor(1, 1, 1, 1)
+		end
+		love.graphics.print("JUMP BOOST - #x10", 2, 28, 0, 2)
+		if buyMenu then
+			love.graphics.setColor(0, 0, 0, 0.5)
+			love.graphics.rectangle('fill', 48, 48, 96, 24)
+			love.graphics.setColor(1,1,1)
+			love.graphics.printf("WOULD YOU LIKE TO BUY "..shopItems[pausemenu_highlight+1].."?", 50, 50, 92, "left", 0, 1)
+			love.graphics.printf("v (ENTER) * (ESCAPE)", 50, 66, 92, "center", 0, 1)
+		end
 	end
 	love.graphics.setColor(1, 1, 1, 1)
 	love.graphics.printf("#x"..coins,1,1,191,"right",0,1)
