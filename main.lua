@@ -11,18 +11,18 @@ function love.load(args)
 	scaling_methods = {"normal", "pixel-perfect", "stretched"}
 	disaster = 0
 	disasTimer = 0
+	if love.filesystem.getInfo("textures.zip") ~= nil then
+		success = love.filesystem.mount("textures.zip", "image_assets")
+		if not success then
+			error("Something went wrong mounting textures.zip. Please double check that your ZIP file is properly formatted and try again.")
+		end
+	end
 	bg = love.graphics.newImage("image_assets/ground/bg.png")
-	bgW, bgH = bg:getDimensions()
 	nightbg = love.graphics.newImage("image_assets/ground/nightbg.png")
-	nightbgW, nightbgH = nightbg:getDimensions()
 	sunset = love.graphics.newImage("image_assets/ground/sunset.png")
-	sunsetW, sunsetH = sunset:getDimensions()
 	sideplat = love.graphics.newImage("image_assets/ground/miniplat.png")
-	sideplatW, sideplatH = sideplat:getDimensions()
 	floatplat = love.graphics.newImage("image_assets/ground/floatplat.png")
-	floatplatW, floatplatH = floatplat:getDimensions()
 	floor = love.graphics.newImage("image_assets/ground/floor.png")
-	floorW, floorH = floor:getDimensions()
 	lava = love.graphics.newImage("image_assets/disaster_assets/lava.png")
 	acid = love.graphics.newImage("image_assets/disaster_assets/acid.png")
 	gas = love.graphics.newImage("image_assets/disaster_assets/gas.png")
@@ -874,11 +874,11 @@ function love.draw()
 	end
 	if not hardcoredead then
 	love.graphics.setColor(1,1,1)
-	love.graphics.draw(bg, 0, 0, 0, 192/bgW, 144/bgH)
+	love.graphics.draw(bg, 0, 0, 0, 192/bg:getWidth(), 144/bg:getHeight())
 	love.graphics.setColor(1,1,1,sunsetTransparency)
-	love.graphics.draw(sunset, 0, 0, 0, 192/sunsetW, 144/sunsetH)
+	love.graphics.draw(sunset, 0, 0, 0, 192/sunset:getWidth(), 144/sunset:getHeight())
 	love.graphics.setColor(1,1,1,starTransparency)
-	love.graphics.draw(nightbg, 0, 0, 0, 192/nightbgW, 144/nightbgH)
+	love.graphics.draw(nightbg, 0, 0, 0, 192/nightbg:getWidth(), 144/nightbg:getHeight())
 	love.graphics.setColor(worldR, worldG, worldB)
 	love.graphics.draw(floor, platx, platy)
 	love.graphics.draw(sideplat, leftplatx, leftplaty)
@@ -955,16 +955,16 @@ function love.draw()
 		love.graphics.setColor(worldR, worldG, worldB, (math.sin(guardian_angel_timer*10)+1)/2)
 	end
 	if playdir == "right" then
-		love.graphics.draw(char, playx-(3*(playwidth/10)), playy, 0, playwidth/10)
+		love.graphics.draw(char, playx-(3*(playwidth/10)), playy, 0, ((playwidth/10)*16)/char:getWidth())
 	else
-		love.graphics.draw(char, playx+(13*(playwidth/10)), playy, 0, playwidth/-10, playwidth/10)
+		love.graphics.draw(char, playx+(13*(playwidth/10)), playy, 0, ((playwidth/-10)*16)/char:getWidth(), ((playwidth/10)*21)/char:getHeight())
 	end
 	love.graphics.setColor(worldR, worldG, worldB, 1-(botdead/2))
 	if bot_toggle == 1 then
 		if botdir == "right" then
-			love.graphics.draw(botchar, botx-(3*(botwidth/10)), boty, 0, botwidth/10)
+			love.graphics.draw(botchar, botx-(3*(botwidth/10)), boty, 0, ((botwidth/10)*16)/botchar:getWidth())
 		else
-			love.graphics.draw(botchar, botx+(13*(botwidth/10)), boty, 0, botwidth/-10, botwidth/10)
+			love.graphics.draw(botchar, botx+(13*(botwidth/10)), boty, 0, ((botwidth/-10)*16)/botchar:getWidth(), ((botwidth/10)*21)/botchar:getHeight())
 		end
 	end
 	love.graphics.setColor(255, 255, 255)
