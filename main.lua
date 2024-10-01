@@ -80,7 +80,7 @@ function love.load(args)
 	love.filesystem.setIdentity("random_disaster_survival", true)
 	if love.filesystem.getInfo("savedata") == nil or tableContains(args, "reset_save_data_like_really_i_want_to_this_text_is_this_long_to_guarantee_i_intended_this") then
 		file = love.filesystem.newFile("savedata", "w")
-		file:write("0\n0\n0\n1\n1\n1\n6\nfalse\n0\n0\n5\n0\n1")
+		file:write("0\n0\n0\n1\n1\n1\n6\nfalse\n0\n0\n5\n0\n1\n0\n1")
 		file:close()
 	end
 	savetable = {}
@@ -120,8 +120,8 @@ function love.load(args)
 	print(savetable[12])
 	guardian_angel_active = tonumber(savetable[13]) or 1
 	print(savetable[13])
-	jump_boost = 3
-	jump_boost_active = 1
+	jump_boost = tonumber(savetable[14]) or 0
+	jump_boost_active = tonumber(savetable[15]) or 1
 	guh = love.math.random(0,100)
 	if guh <= 10 then 
 		char = love.graphics.newImage("image_assets/chars/char_main_2.png") 
@@ -177,8 +177,16 @@ function tableContains(table, content)
 	end
 end
 
+function TheScriptThatExistsOnlyToMakeTheHardcoreOptionRenderMoreNicely(bool_as_string)
+	if bool_as_string == "true" then
+		return "v"
+	else
+		return "*"
+	end
+end
+
 function love.quit()
-	success, err = love.filesystem.write("savedata", wins.."\n"..deaths.."\n"..coins.."\n"..fullscreen.."\n"..scaling_method.."\n"..bot_toggle.."\n"..time_speed.."\n"..hardcore.."\n"..hardcorewins.."\n"..hardcorehighscore.."\n"..disastDelay.."\n"..guardian_angel.."\n"..guardian_angel_active)
+	success, err = love.filesystem.write("savedata", wins.."\n"..deaths.."\n"..coins.."\n"..fullscreen.."\n"..scaling_method.."\n"..bot_toggle.."\n"..time_speed.."\n"..hardcore.."\n"..hardcorewins.."\n"..hardcorehighscore.."\n"..disastDelay.."\n"..guardian_angel.."\n"..guardian_angel_active.."\n"..jump_boost.."\n"..jump_boost_active)
 	return not success
 end
 
@@ -358,7 +366,7 @@ function love.keypressed(key, sc, isrepeat)
 					love.event.quit(0)
 				elseif pausemenu_highlight==2 then
 					paused = false
-				elseif pausemenu_highlight==1 then
+				elseif pausemenu_highlight==1 and not powerLock then
 					shopMenu = true
 					pausemenu_highlight = 0
 				elseif pausemenu_highlight==0 then
@@ -480,11 +488,10 @@ if disaster == 0 then
 		if disaster_Stored == 0 then
 			love.audio.play(warnaudio)
 			disaster_Stored = love.math.random(1, 9)
-			powerLock = true
 			while disaster_Stored == previous_disaster do
 				disaster_Stored = love.math.random(1, 9)
 		    end
-			if true then --love.math.random(1, 10) == 10 then
+			if love.math.random(1, 10) == 10 then
 				modifier = love.math.random(1,6)
 				while disaster_Stored == 4 and modifier == 4 do
 					modifer = love.math.random(1,6)
@@ -495,6 +502,7 @@ if disaster == 0 then
 			disaster = disaster_Stored
 			disaster_Stored = 0
 			disasTimer = 0
+			powerLock = true
 			-- modifier tasks
 			if modifier == 1 then
 				playwidth, playheight = 7.5, 15.75
@@ -634,7 +642,7 @@ else
 	elseif disaster == 8 then
 		lightningTimer = lightningTimer + dt
 		if lightningTimer >=0.5 and lightningx == -999 then
-			lightningx = math.random(0, 168)
+			lightningx = love.math.random(0, 168)
 			if lightningx > 48 and lightningx < 144 then
 				lightningy = 112
 			else
@@ -762,7 +770,7 @@ else
 	end
 end
 if playy >= 144 or ( (CheckCollision(zombx, zomby, zombwidth, zombheight, playx, playy, playwidth, playheight) and disaster==9) or (CheckCollision(lightningx, lightningy-144, 24, 144, playx, playy, playwidth, playheight) and lightningActive) or  CheckCollision(lasersx[2]+2, lasersy[2]+2, lasersw-4, lasersh-4, playx, playy, playwidth, playheight) or CheckCollision(lasersx[1]+2, lasersy[1]+2, lasersw-4, lasersh-4, playx, playy, playwidth, playheight) or (CheckCollision(96-((16*disasTimer)/2), 72-((16*disasTimer)/2), disasTimer*16, disasTimer*16, playx, playy, playwidth, playheight) and disaster==6) or (CheckCollision(boomx, boomy, boomwidth, boomheight, playx, playy, playwidth, playheight) and boomactive) or CheckCollision(meteorx, meteory, meteorwidth, meteorheight, playx, playy, playwidth, playheight) or CheckCollision(lavax, lavay, lavawidth, lavaheight, playx, playy, playwidth, playheight) or CheckCollision(beamx, beamy, beamwidth, beamheight, playx, playy, playwidth, playheight) ) and dead~=1 and guardian_angel_timer<=0 then 
-	if guardian_angel_active and not guardian_angel_used then
+	if guardian_angel_active==2 and not guardian_angel_used then
 		guardian_angel_used = true
 		guardian_angel_timer = 5
 	else
@@ -996,7 +1004,7 @@ function love.draw()
 				if powerLock then
 					love.graphics.setColor(1, 0, 0, 1)
 					love.graphics.print("THE SHOP IS CLOSED DURING DISASTERS.", 0, 124)
-					love.graphics.print("PLEASE SHOP DURING INTERMISSIONS.", 0, s)
+					love.graphics.print("PLEASE SHOP ONLY DURING INTERMISSIONS.", 0, 130)
 				else
 					love.graphics.setColor(1, 1, 0, 1)
 				end
@@ -1012,7 +1020,7 @@ function love.draw()
 			end
 			love.graphics.print("BACK TO GAME", 2, 40, 0, 2)
 			if pausemenu_highlight == 3 then
-				love.graphics.print("SAVE YOUR COINS, WINS, AND DEATHS (TOP-RIGHT)", 0, 118)
+				love.graphics.print("SAVE YOUR COINS, WINS, DEATHS, ETC. (TOP-RIGHT)", 0, 118)
 				love.graphics.print("THEN EXIT AND RETURN TO DESKTOP/OS", 0, 124)
 				love.graphics.setColor(1, 1, 0, 1)
 			else
@@ -1069,7 +1077,7 @@ function love.draw()
 		else
 			love.graphics.setColor(1, 1, 1, 1)
 		end
-		love.graphics.print("HARDCORE:"..string.upper(hardcore), 2, 64, 0, 2)
+		love.graphics.print("HARDCORE:"..TheScriptThatExistsOnlyToMakeTheHardcoreOptionRenderMoreNicely(hardcore), 2, 64, 0, 2)
 		if pausemenu_highlight == 5 then
 			love.graphics.print("DELAY BETWEEN DISASTERS BEING ACTIVATED", 0, 118)
 			love.graphics.setColor(1, 1, 0, 1)
@@ -1095,7 +1103,7 @@ function love.draw()
 		if pausemenu_highlight == 1 then
 			love.graphics.print("MAKES YOU JUMP EXTRA HIGH", 0, 118)
 			love.graphics.print("OWNED:"..jump_boost.." ACTIVE:"..yesno_select[jump_boost_active], 0, 124)
-			if coins >= 15 then
+			if coins >= 10 then
 				love.graphics.setColor(1, 1, 0, 1)
 			else
 				love.graphics.setColor(1, 0, 0, 1)
